@@ -21,31 +21,47 @@ export default function UpdatePost() {
   const [formData, setFormData] = useState({});
   const [publishError, setPublishError] = useState(null);
   const { postId } = useParams();
+  console.log('Form Data:', formData); // Debugging line to check formData structure
 
+
+  
   const navigate = useNavigate();
-    const { currentUser } = useSelector((state) => state.user);
+    const { currentUser } = useSelector((state) => state.user);    
+    console.log('Current User:', currentUser);
 
-  useEffect(() => {
-    try {
+
+    useEffect(() => {
       const fetchPost = async () => {
-        const res = await fetch(`/api/post/getposts?postId=${postId}`);
-        const data = await res.json();
-        if (!res.ok) {
-          console.log(data.message);
-          setPublishError(data.message);
+        if (!postId) {
+          console.error('Post ID is missing');
+          setPublishError('Post ID is missing');
           return;
         }
-        if (res.ok) {
-          setPublishError(null);
-          setFormData(data.posts[0]);
+        
+        try {
+          const res = await fetch(`/api/post/getposts?postId=${postId}`);
+          const data = await res.json();
+          if (!res.ok) {
+            console.log(data.message);
+            setPublishError(data.message);
+            return;
+          }
+          if (res.ok && data.posts && data.posts.length > 0) {
+            setPublishError(null);
+            setFormData(data.posts[0]);
+          } else {
+            setPublishError('Post not found');
+          }
+        } catch (error) {
+          console.log(error.message);
+          setPublishError('Failed to fetch post');
         }
       };
-
+    
       fetchPost();
-    } catch (error) {
-      console.log(error.message);
-    }
-  }, [postId]);
+    }, [postId]);
+    
+
 
   const handleUpdloadImage = async () => {
     try {
@@ -85,6 +101,16 @@ export default function UpdatePost() {
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
+  
+    // Check if formData._id and currentUser._id are correctly set
+    console.log('Form Data:', formData); 
+    console.log('Current User:', currentUser); 
+  
+    if (!formData._id || !currentUser._id) {
+      setPublishError('Missing post ID or user ID');
+      return;
+    }
+  
     try {
       const res = await fetch(`/api/post/updatepost/${formData._id}/${currentUser._id}`, {
         method: 'PUT',
@@ -98,7 +124,7 @@ export default function UpdatePost() {
         setPublishError(data.message);
         return;
       }
-
+  
       if (res.ok) {
         setPublishError(null);
         navigate(`/post/${data.slug}`);
@@ -107,6 +133,8 @@ export default function UpdatePost() {
       setPublishError('Something went wrong');
     }
   };
+  
+  
   return (
     <div className='p-3 max-w-3xl mx-auto min-h-screen'>
       <h1 className='text-center text-3xl my-7 font-semibold'>Update post</h1>

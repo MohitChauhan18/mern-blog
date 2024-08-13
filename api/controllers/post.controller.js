@@ -84,8 +84,15 @@ export const deletepost = async (req, res, next) => {
 };
 
 export const updatepost = async (req, res, next) => {
-  if (!req.user.isAdmin || req.user.id !== req.params.userId) {
-    return next(errorHandler(403, 'You are not allowed to update this post'));
+  console.log('Request Params:', req.params); // Log parameters to check their values
+  console.log('User from Token:', req.user); // Log user info from token
+
+  if (!req.params.postId || !req.params.userId) {
+    return next(errorHandler(400, 'Missing post ID or user ID'));
+  }
+
+  if (!req.user.isAdmin || req.user.id != req.params.userId) {
+    return next(errorHandler(403, "You do not have permission to update this post."));
   }
   try {
     const updatedPost = await Post.findByIdAndUpdate(
